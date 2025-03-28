@@ -5,12 +5,15 @@ export function handleSockets(io: Server) {
         console.log("Usuario conectado:", socket.id);
 
         setTimeout(() => {
-            socket.emit("connected", { message: "Te conectaste!" });
+            socket.emit("connected", {socketID: socket.id, message: "Te conectaste!" });
         }, 1000);
 
         socket.on("message", (data) => {
             console.log('${socket.id}:${ data }');
-            io.emit("message", data); // Enviar mensaje a todos
+            io.emit("message",{
+                socketID: socket.id, 
+                message: data
+            }); // Enviar mensaje a todos
         });
 
         socket.on("disconnect", () => {
