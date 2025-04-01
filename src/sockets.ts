@@ -9,7 +9,7 @@ export function handleSockets(io: Server) {
         }, 1000);
 
         socket.on("message", (data) => {
-            console.log('${socket.id}:${ data }');
+            console.log(`${socket.id}:${ data }`);
             io.emit("message",{
                 socketID: socket.id, 
                 message: data
