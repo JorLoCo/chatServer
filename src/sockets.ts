@@ -6,16 +6,20 @@ const blockedIPs = new Set([
 ]);
 
 export function handleSockets(io: Server) {
+    const connectedUsers:Map<string, string> = new Map<string, string>();
     io.on("connection", (socket: Socket) => {
-        const user = socket.handshake.query.user || "desconocido";
+        const user = socket.handshake.query.user as string || "desconocido";
         const clientIp = socket.handshake.address.replace(/^.*:/, ''); // quitar prefijo ipv6
         const TimeMessage = socket.handshake.time;
+        connectedUsers.set(socket.id, user);
+
+        io.emit('users:update', {users: [...connectedUsers.values()]});
 
         // Verificar si la IP está bloqueada
         if (blockedIPs.has(clientIp)) {
             console.log(`Conexión rechazada para IP bloqueada: ${clientIp} (Usuario: ${user})`);
             socket.emit("blocked", { message: "Tu IP está bloqueada y no puedes enviar mensajes." });
-            socket.disconnect(true); // Desconectar inmediatamente
+            socket.disconnect(true);
             return;
         }
 
@@ -27,7 +31,7 @@ export function handleSockets(io: Server) {
 
         io.emit("message", {
             socketID: "server",
-            message: `Bienvenido ${socket.id} al chat!`
+            message: `Bienvenido ${user} al chat!`
         });
 
         socket.on("message", (data) => {
@@ -49,8 +53,10 @@ export function handleSockets(io: Server) {
             console.log("Usuario desconectado:", socket.id, "a la fecha y hora de: ", TimeMessage);
             io.emit("message", {
                 socketID: "server",
-                message: `Adios ${socket.id}, que le vaya bien en el bote`
+                message: `Adios ${user}, que le vaya bien en el bote`
             });
+            connectedUsers.delete(socket.id)
+            io.emit('users:update', {users: [...connectedUsers.values()]});
         });
     });
 }
